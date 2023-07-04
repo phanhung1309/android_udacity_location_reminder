@@ -18,6 +18,7 @@ import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
+import com.udacity.project4.utils.EspressoIdlingResource.wrapEspressoIdlingResource
 import com.udacity.project4.utils.hasAllLocationPermissions
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import com.udacity.project4.utils.showPermissionSnackBar
@@ -154,7 +155,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             )!!
 
             selectedMarker.showInfoWindow()
-            _viewModel.locationSelected.postValue(true)
+            wrapEspressoIdlingResource {
+                _viewModel.locationSelected.postValue(true)
+            }
         }
     }
 
@@ -172,7 +175,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
             selectedPointOfInterest = poi
             selectedMarker.showInfoWindow()
-            _viewModel.locationSelected.postValue(true)
+            wrapEspressoIdlingResource {
+                _viewModel.locationSelected.postValue(true)
+            }
         }
     }
 
