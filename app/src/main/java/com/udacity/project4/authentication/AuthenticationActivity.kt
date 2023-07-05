@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
@@ -20,6 +22,7 @@ class AuthenticationActivity : AppCompatActivity() {
         const val TAG = "AuthenticationActivity"
     }
 
+    private val viewModel by viewModels<LoginViewModel>()
     private lateinit var binding: ActivityAuthenticationBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +34,17 @@ class AuthenticationActivity : AppCompatActivity() {
             launchSignInFlow()
         }
 
+        viewModel.authenticationState.observe(this, Observer { authenticationState ->
+            when (authenticationState) {
+                LoginViewModel.AuthenticationState.AUTHENTICATED -> {
+                    Log.i(TAG, "Authentication state: $authenticationState")
+                    val intent = Intent(this, RemindersActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    startActivity(intent)
+                }
+                else -> {}
+            }
+        })
     }
 
     private fun launchSignInFlow() {
