@@ -37,12 +37,9 @@ fun Activity.hasBaseLocationPermissions(): Boolean {
 }
 
 fun Activity.hasAllLocationPermissions(): Boolean {
-    return listOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    ).all {
-        ActivityCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-    }
+    return hasBaseLocationPermissions() && hasAndroidQPermissions(this) && hasAndroidRPermissions(
+        this
+    )
 }
 
 @TargetApi(Build.VERSION_CODES.Q)
