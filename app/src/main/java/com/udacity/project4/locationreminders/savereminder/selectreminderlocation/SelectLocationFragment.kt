@@ -8,6 +8,9 @@ import android.view.*
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -34,6 +37,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
     private lateinit var selectedMarker: Marker
     private lateinit var selectedPointOfInterest: PointOfInterest
 
@@ -106,26 +110,78 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         if (requireActivity().hasAllLocationPermissions()) {
             map.isMyLocationEnabled = true
             fusedLocationClient.lastLocation?.addOnSuccessListener { location ->
-                val snippet = getString(
-                    R.string.lat_long_snippet,
-                    location.latitude,
-                    location.longitude
-                )
-                val myLatLng = LatLng(location.latitude, location.longitude)
+                if (location != null) {
+                    // Handle the case when the last known location is available
+                    val snippet = getString(
+                        R.string.lat_long_snippet,
+                        location.latitude,
+                        location.longitude
+                    )
+                    val myLatLng = LatLng(location.latitude, location.longitude)
 
-                selectedPointOfInterest = PointOfInterest(myLatLng, snippet, "My current location")
+                    selectedPointOfInterest =
+                        PointOfInterest(myLatLng, snippet, "My current location")
 
-                selectedMarker = map.addMarker(
-                    MarkerOptions()
-                        .snippet(snippet)
-                        .position(myLatLng)
-                        .title(getString(R.string.reminder_location))
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                )!!
+                    selectedMarker = map.addMarker(
+                        MarkerOptions()
+                            .snippet(snippet)
+                            .position(myLatLng)
+                            .title(getString(R.string.reminder_location))
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                    )!!
 
-                val zoomLevel = 18f
-                map.moveCamera(CameraUpdateFactory.newLatLngZoom(myLatLng, zoomLevel))
-                selectedMarker.showInfoWindow()
+                    val zoomLevel = 18f
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(myLatLng, zoomLevel))
+                    selectedMarker.showInfoWindow()
+                } else {
+                    // Request location updates
+                    locationCallback = object : LocationCallback() {
+                        override fun onLocationResult(locationResult: LocationResult) {
+                            for (location in locationResult.locations) {
+                                // Handle the case when a new location is available
+                                val snippet = getString(
+                                    R.string.lat_long_snippet,
+                                    location.latitude,
+                                    location.longitude
+                                )
+                                val myLatLng = LatLng(location.latitude, location.longitude)
+
+                                selectedPointOfInterest =
+                                    PointOfInterest(myLatLng, snippet, "My current location")
+
+                                selectedMarker = map.addMarker(
+                                    MarkerOptions()
+                                        .snippet(snippet)
+                                        .position(myLatLng)
+                                        .title(getString(R.string.reminder_location))
+                                        .icon(
+                                            BitmapDescriptorFactory.defaultMarker(
+                                                BitmapDescriptorFactory.HUE_GREEN
+                                            )
+                                        )
+                                )!!
+
+                                val zoomLevel = 18f
+                                map.moveCamera(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        myLatLng,
+                                        zoomLevel
+                                    )
+                                )
+                                selectedMarker.showInfoWindow()
+
+                                // Stop receiving location updates
+                                fusedLocationClient.removeLocationUpdates(locationCallback)
+                            }
+                        }
+                    }
+
+                    fusedLocationClient.requestLocationUpdates(
+                        LocationRequest(),
+                        locationCallback,
+                        null
+                    )
+                }
             }
         } else {
             requireActivity().showPermissionSnackBar(binding.root)
